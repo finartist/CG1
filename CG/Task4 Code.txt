@@ -1,0 +1,84 @@
+bool initDice()
+{
+  ogl::IndexedTriangleIO io;
+#ifdef _DEBUG
+   // This smaller model loads much faster in debug mode
+  io.loadFromOBJ(gDataPath+"assets/dieDebug.obj");
+#else
+  // This large model loads fast only in release mode
+  io.loadFromOBJ(gDataPath+"assets/die.obj");
+#endif
+  if(io.vertexNormals().empty())
+  {
+    std::cerr<<"OBJ model needs vertex normals!"<<std::endl;
+    return false;
+  }
+
+  std::cerr<<"Loaded "<<io.vertexPositions().size()<< " vertices, "<<
+    io.triangleIndices().size()/3<<" triangles.\n\n";
+
+  // Create the dice
+  gDice.resize(gNumDice);
+
+  for(size_t i=0;i<gDice.size();++i)
+  {
+    gDice[i]= std::make_shared<ogl::TriangleGeometry>();
+    // The first die stores the original geometry (indexed triangle set)
+    if(i==0)
+      gDice[0]->init(io.vertexPositions(),io.vertexNormals(),io.triangleIndices());
+    // The other dice are instances of the original geometry (no duplicate geometry stored)
+    else
+      gDice[i]->initInstance(gDice[0]);
+
+    // Set a bluish material with shininess=100.f
+    gDice[i]->setMaterial(100.f,ogl::Vec3f(0.2f,0.5f,1.0f));
+  }
+
+  // TODO: Transform the dice gDice[0..5] to obtain the result
+  // shown in the exercise sheet.
+
+  // You can use the Mat4 transformation functions of the model matrices:
+  // modelMatrix().translate(tx,ty,tz);
+  // modelMatrix().scale(sy,sy,sz);
+  // modelMatrix().rotate(angleInDegree,Vec3(axis_X, axis_Y, axis_Z);
+
+  // Note: the origin of the untransformed cube with dimensions
+  // x= -0.5 .. 0.5
+  // y= -0.5 .. 0.5
+  // z=  0.0 .. 1.0
+  // is (0,0,0) is the center of the bottom face (with number 1 on it)
+
+  //TODO: Replace these simple transformations
+
+  //gDice[0] should be the large cube with number 1 facing the camera
+  gDice[0]->modelMatrix().rotateXYZ(0, -90, 0);
+  gDice[0]->modelMatrix().scale(2, 2, 2);
+  gDice[0]->modelMatrix().translate(4.5f, 3, 1);
+
+  //gDice[1] should be the cube with number 2 facing the camera
+  gDice[1]->modelMatrix().rotateXYZ(0, 0, 90);
+  gDice[1]->modelMatrix().translate(3,2.5f,2);
+
+  //gDice[2] should be the cube with number 3 facing the camera
+  gDice[2]->modelMatrix().rotateXYZ(0, 0, 180);
+  gDice[2]->modelMatrix().translate(3,3.5f,2);
+
+  //gDice[3] should be the cube with number 4 facing the camera
+  gDice[3]->modelMatrix().rotateXYZ(0, 0, -90);
+  gDice[3]->modelMatrix().translate(3,3.5f,3);
+
+  //gDice[4] should be the cube with number 5 facing the camera
+  gDice[4]->modelMatrix().translate(3,2.5f,3);
+
+  // Hint for gDice[5] that stands on the tip showing number 6
+  // the rotation that is performed on this die is equivalent to the rotation
+  // of the vector (1,1,1)^T onto the z-axis (0,0,1).
+  // It is helpful to compute this transformation on a sheet of paper.
+
+  //gDice[5] should be the cube with number 6 facing the camera
+  gDice[5]->modelMatrix().rotateXYZ(0, 0, -45);
+  gDice[5]->modelMatrix().rotateXYZ(0, 60, 0);
+  gDice[5]->modelMatrix().translate(2.75, 3, 4.6);
+
+  return true;
+}
