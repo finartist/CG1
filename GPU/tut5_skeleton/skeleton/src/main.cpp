@@ -54,6 +54,7 @@ template<typename T> void merge(T* dataleft, T* lastleft, T* dataright, T* lastr
 	int l = 0;
 	int r = 0;
 
+	//always take the smaller element from the left or right array
 	while(dataleft + l != lastleft && dataright + r != lastright)
 	{
 		if(dataleft[l] <= dataright[r])
@@ -69,6 +70,7 @@ template<typename T> void merge(T* dataleft, T* lastleft, T* dataright, T* lastr
 		}
 	}
 
+	//if elements from one array are left, add them at the end
 	while(dataleft + l != lastleft)
 	{
 		scratch[l + r] = std::move(dataleft[l]);
@@ -81,6 +83,7 @@ template<typename T> void merge(T* dataleft, T* lastleft, T* dataright, T* lastr
 		r++;
 	}
 
+	//copy sorted elements to the original data array
 	//std::memcpy(dataleft, scratch, r+l); //does not work :( ??
 	std::copy(scratch, scratch + l + r, dataleft);
 	//for(int i = 0;  i < r+l; i++)
@@ -109,10 +112,8 @@ mergesortParallel( T* data, T* last, T* scratch, const int num_threads) {
 	for (int i = 0; i < num_threads; i++)
 	{
 		//scratch is one array -> avoid race condition by partition it in chunk size parts
-		threads.push_back(std::thread(mergesort<T>, data + i*chunk_size, last + (i+1)*chunk_size, scratch + i*chunk_size));
+		threads.push_back(std::thread(mergesort<T>, data + i*chunk_size, data + (i+1)*chunk_size, scratch + i*chunk_size));
 	}
-
-	std::cout << "Start joining threads" << std::endl;
 
 	//join threads
 	for(auto& th : threads)
@@ -120,9 +121,9 @@ mergesortParallel( T* data, T* last, T* scratch, const int num_threads) {
 		th.join();
 	}
 
-	//merge results of threads
+	//merge results of threads as long as at least 2 chunks are left to merge
 	int remaining_blocks = num_threads;
-	while(remaining_blocks >= 1)
+	while(remaining_blocks > 1)
 	{
 		for(int i = 0; i < remaining_blocks; i = i + 2)
 		{
