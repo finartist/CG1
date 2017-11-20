@@ -145,36 +145,68 @@ main( int /*argc*/, char** /*argv*/ ) {
   std::srand( std::time(0));
 
   // allocate memory
+  int K = 100;
   int n = 4096;
   int* data = (int*) malloc( n * sizeof(int));
   int* scratch = (int*) malloc( n * sizeof(int));
   std::generate( data, data + n, std::rand);
 
+  // parallel solution
+  int* datapar = (int*)malloc(n * sizeof(int));
+  memcpy(datapar, data, n * sizeof(int));
+
   // reference solution
   int* dataref = (int*) malloc( n * sizeof(int));
   memcpy( dataref, data, n * sizeof(int));
   std::sort( dataref, dataref+n);
+  
+  double timesumser = 0;
+  double timesumpar = 0;
 
-#if 0
-  // run merge sort
-  mergesort( data, data+n, scratch);
-#endif
+  for(int i = 0; i < K; i++)
+  {
+	  // start timing
+	  clock_t tstartser = clock();
+	  mergesort(data, data + n, scratch);
+	  // end timing
+	  clock_t tendser = clock();
+	  double telapsedser = (double)(tendser - tstartser) / CLOCKS_PER_SEC;
+	  timesumser += telapsedser;
 
-#if 1
-  // run parallel merge sort
-  unsigned int num_threads = std::thread::hardware_concurrency();
-  std::cout << "num_threads = " << num_threads << std::endl;
-  mergesortParallel( data, data+n, scratch, num_threads);
-#endif
+	  // run parallel merge sort
+	  unsigned int num_threads = std::thread::hardware_concurrency();
+	  //std::cout << "num_threads = " << num_threads << std::endl;
+	  clock_t tstartpar = clock();
+	  mergesortParallel(datapar, datapar + n, scratch, num_threads);
+	  clock_t tendpar = clock();
+	  double telapsedpar = (double)(tendpar - tstartpar) / CLOCKS_PER_SEC;
+	  timesumpar += telapsedpar;
 
-  // check correctness of result
-  bool correct = true;
-  for( int i = 0; i < n; ++i) {
-	  std::cout << dataref[i] << " / " << data[i] << std::endl;
-    correct &= (dataref[i] == data[i]);
+	  // check correctness of result
+	  bool correctser = true;
+	  for (int i = 0; i < n; ++i) {
+		  //std::cout << dataref[i] << " / " << data[i] << std::endl;
+		  correctser &= (dataref[i] == data[i]);
+	  }
+	  std::cout << "Mergesort serial " << ((correctser) ? "succeeded." : "failed.") << " in " << telapsedser << " seconds." << std::endl;
+
+	  // check correctness of result
+	  bool correctpar = true;
+	  for (int i = 0; i < n; ++i) {
+		  //std::cout << dataref[i] << " / " << data[i] << std::endl;
+		  correctpar &= (dataref[i] == datapar[i]);
+	  }
+	  std::cout << "Mergesort parallel " << ((correctpar) ? "succeeded." : "failed.") << " in " << telapsedpar << " seconds." << std::endl;
+
+	  std::generate(data, data + n, std::rand);
+	  memcpy(datapar, data, n * sizeof(int));
+	  memcpy(dataref, data, n * sizeof(int));
+	  std::sort(dataref, dataref + n);
   }
-  std::cout << "Mergesort " << ((correct) ? "succeeded." : "failed.") << std::endl;
 
+  std::cout << "Mean serial time " << timesumser/K << std::endl;
+  std::cout << "Mean parallel time " << timesumpar/K << std::endl;
+  
   // clean up
   free( data);
   free( scratch);
