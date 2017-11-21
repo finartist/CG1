@@ -146,7 +146,7 @@ main( int /*argc*/, char** /*argv*/ ) {
 
   // allocate memory
   int K = 100;
-  int n = 4096;
+  int n = 4096*8;
   int* data = (int*) malloc( n * sizeof(int));
   int* scratch = (int*) malloc( n * sizeof(int));
   std::generate( data, data + n, std::rand);
