@@ -84,14 +84,53 @@ template<typename T> void merge(T* dataleft, T* lastleft, T* dataright, T* lastr
 	}
 
 	//copy sorted elements to the original data array
-	//std::memcpy(dataleft, scratch, r+l); //does not work :( ??
-	std::copy(scratch, scratch + l + r, dataleft);
-	//for(int i = 0;  i < r+l; i++)
-	//{
-	//	//std::cout << scratch[i] << " # " << dataleft[i] << std::endl;
-	//}
+	//not good for parallel merge -> leave sorted data in scratch
+	//std::copy(scratch, scratch + l + r, dataleft);
 }
 
+template<typename T> void mergeParallel(T* left, T* leftlast, T* right, T* rightlast, T* scratch)
+{
+	//end recursion
+	const int nmin = 16;
+	if((rightlast - right) + (leftlast -left) <= nmin)
+	{
+		merge(left, leftlast, right, rightlast, scratch);
+		return;
+	}
+
+	T* x = nullptr;
+	T* xlast = nullptr;
+	T* y = nullptr;
+	T* ylast = nullptr;
+
+	//always use the longer array to split in half
+	if (leftlast - left < rightlast - right)
+	{
+		x = right;
+		xlast = rightlast;
+		y = left;
+		ylast = leftlast;
+	}
+	else
+	{
+		x = left;
+		xlast = leftlast;
+		y = right;
+		ylast = rightlast;
+	}
+
+	//split x in half
+	int x_n = xlast - x;
+	int xhalf = x_n / 2;
+	int y_n = ylast - y;
+	
+	//search the first element in y to be bigger than the one at the center position of of x
+	int y_index = std::upper_bound(y, ylast, x[xhalf]) - y;
+
+	//merge the two halfs together
+	mergeParallel(x, x + xhalf, y, y + y_index, scratch);
+	mergeParallel(x + xhalf, xlast, y + y_index, ylast, scratch + xhalf + y_index);
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //! Merge sort parallel
 // split up until number of cores is reached
@@ -125,10 +164,18 @@ mergesortParallel( T* data, T* last, T* scratch, const int num_threads) {
 	int remaining_blocks = num_threads;
 	while(remaining_blocks > 1)
 	{
+#if 0
 		for(int i = 0; i < remaining_blocks; i = i + 2)
 		{
 			merge(data + i*chunk_size, data + (i + 1)*chunk_size, data + (i + 1)*chunk_size, data + (i + 2)*chunk_size, scratch);
 		}
+#else
+		for (int i = 0; i < remaining_blocks; i = i + 2)
+		{
+			mergeParallel(data + i*chunk_size, data + (i + 1)*chunk_size, data + (i + 1)*chunk_size, data + (i + 2)*chunk_size, scratch + i*chunk_size);
+			std::move(scratch + i*chunk_size, scratch + (i + 2)*chunk_size, data + i*chunk_size);
+		}
+#endif
 		remaining_blocks /= 2;
 		chunk_size *= 2;
 	}
@@ -145,8 +192,8 @@ main( int /*argc*/, char** /*argv*/ ) {
   std::srand( std::time(0));
 
   // allocate memory
-  int K = 100;
-  int n = 4096*8;
+  int K = 1;
+  int n = 4096;//*8;
   int* data = (int*) malloc( n * sizeof(int));
   int* scratch = (int*) malloc( n * sizeof(int));
   std::generate( data, data + n, std::rand);
@@ -166,7 +213,7 @@ main( int /*argc*/, char** /*argv*/ ) {
   for(int i = 0; i < K; i++)
   {
 	  // start timing
-	  clock_t tstartser = clock();
+	  clock_t tstartser = clock(); //better use std::chrono::high_resolution_clock::now()
 	  mergesort(data, data + n, scratch);
 	  // end timing
 	  clock_t tendser = clock();
@@ -193,7 +240,7 @@ main( int /*argc*/, char** /*argv*/ ) {
 	  // check correctness of result
 	  bool correctpar = true;
 	  for (int i = 0; i < n; ++i) {
-		  //std::cout << dataref[i] << " / " << data[i] << std::endl;
+		  std::cout << dataref[i] << " / " << data[i] << std::endl;
 		  correctpar &= (dataref[i] == datapar[i]);
 	  }
 	  std::cout << "Mergesort parallel " << ((correctpar) ? "succeeded." : "failed.") << " in " << telapsedpar << " seconds." << std::endl;
