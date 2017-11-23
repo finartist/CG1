@@ -49,32 +49,10 @@ def getUniformPointH2() :
     return omega
 
 def getCosineDistributedPointH2() :
-
-    # generate random point in [0,1]^2
+    #see course notes for where this formula comes from    
     omega = np.random.rand(2)
-    omega *= 2
-    omega -= 1
-    r = np.sqrt(omega[0]*omega[0] + omega[1]*omega[1])
-    #omega has to be in disk
-    while r > 1:
-        omega = np.random.rand(2)
-        omega *= 2
-        omega -= 1
-        r = np.sqrt(omega[0]*omega[0] + omega[1]*omega[1])
-    
-    xaxisvector = np.array([1.0, 0.0])
-    omega = omega/np.linalg.norm(omega)
-    #get phi by computing the angle between x axis and random point vector
-    phi = np.arccos(np.dot(omega, xaxisvector))
-    #print(phi)
-    
-    #if the angle is > 180° (= pi) correct value (arccos just gives pos values 0 to pi) 
-    if omega[1] < 0:
-        phi = 2*np.pi - phi
-    
-    #return the actual value
-    omega = np.array([np.arcsin(r), phi])
-    
+    omega[0] = np.arcsin(np.sqrt(omega[0]))
+    omega[1] *= 2*np.pi
     return omega
 
 def getStratifiedPointsH2(n, num_stratas):
@@ -96,7 +74,6 @@ def getSobolSequencePointsH2(n):
     
     sobolpoints = sobol_seq.i4_sobol_generate(2, n)
     
-    sobolpoints[:, 0] = np.sqrt(sobolpoints[:, 0])
     sobolpoints[:, 1] = sobolpoints[:, 1] * 2 * np.pi
                
     #map to hemisphere
@@ -226,7 +203,7 @@ print("stratified sampling")
 print("low discrepancy sequences")
 [lowdisintegrals, lowdisvariance, lowdiserrors] = lowDiscrepancySequence(Ns, K)
 ###############################################################################
-# plot
+# plot graphs
 
 plt.plot(univariance, label="Uniform")
 plt.plot(cosvariance, label="Cosine Weighted")
@@ -245,7 +222,7 @@ plt.title("Errors")
 plt.show()
 
 ###############################################################################
-omegas = getStratifiedPointsH2(1024, 1024)
+omegas = np.array([getCosineDistributedPointH2() for i in range(1024)])
 
 # plot points on sphere
 
