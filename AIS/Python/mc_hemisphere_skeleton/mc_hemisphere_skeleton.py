@@ -161,9 +161,9 @@ for idx in range(Ns.size):
     variance = 0
     #compute K time the integral with N random points via monte carlo
     for j in range(K):
-        omega = np.array([getCosineDistributedPointH2() for i in range(N)])
-        integrals[idx, j] = np.sum(np.cos(omega[i, 0])/((1/np.pi)*np.cos(omega[i,0])) for i in range(N))
-    integrals[idx, :] *= 1/N #* np.pi * 2
+        omega = np.array([getpxdistributedPointS2() for i in range(N)])
+        integrals[idx, j] = np.sum(np.cos(omega[i, 0])/(np.cos(omega[i, 0])/np.pi) for i in range(N))
+    integrals[idx, :] *= 1/N
     #get mean error for all integrals in K
     errors[idx] = np.sum(integrals[idx, :] - np.pi)/K
     #compute variance for the K integrals
