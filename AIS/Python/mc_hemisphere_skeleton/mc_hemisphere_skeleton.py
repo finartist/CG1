@@ -32,7 +32,7 @@ def s2tor3array( omega) :
 def ell( omega) :
     return np.max( [0.0, np.cos( omega[0])])
 
-def getUniformPointS2() :
+def getUniformPointH2() :
 
     # generate random point in [0,1]^2
     omega = np.random.rand(2)
@@ -44,7 +44,7 @@ def getUniformPointS2() :
     
     return omega
 
-def getpxdistributedPointS2() :
+def getCosineDistributedPointH2() :
 
     # generate random point in [0,1]^2
     omega = np.random.rand(2)
@@ -57,6 +57,8 @@ def getpxdistributedPointS2() :
         omega *= 2
         omega -= 1
         r = np.sqrt(omega[0]*omega[0] + omega[1]*omega[1])
+    
+    #phi can also be computed as phi = arctan2(omega[0], omega[1])
     
     xaxisvector = np.array([1.0, 0.0])
     omega = omega/np.linalg.norm(omega)
@@ -79,7 +81,7 @@ print("original monte carlo")
 
 N = 1000
 #omegas = np.zeros( [N, 2])
-omegas = np.array([getUniformPointS2() for i in range(N)])
+omegas = np.array([getUniformPointH2() for i in range(N)])
 
 #integral = 0   
        
@@ -94,46 +96,49 @@ omegas = np.array([getUniformPointS2() for i in range(N)])
 K = 10
 #want to compute integral for different numbers N of sample points
 Ns = np.array(2**np.linspace(6,13,8), dtype = np.int32)
-integrals = np.zeros([Ns.size, K])
-errors = np.zeros(Ns.size)
-varis = np.zeros([Ns.size])              
+integralsmontecarlo = np.zeros([Ns.size, K])
+errorsmontecarlo = np.zeros(Ns.size)
+varismontecarlo = np.zeros([Ns.size])              
 for idx in range(Ns.size):
     N = Ns[idx]
     #variance definition = mean(abs(x - x.mean())**2)
     variance = 0
     #compute K time the integral with N random points via monte carlo
     for j in range(K):
-        omega = np.array([getUniformPointS2() for i in range(N)])
-        integrals[idx, j] = np.sum(np.cos(omega[i, 0]) for i in range(N))
-    integrals[idx, :] *= np.pi * 2 * 1/N
-    errors[idx] = np.sum(integrals[idx, :] - np.pi) / K
+        omega = np.array([getUniformPointH2() for i in range(N)])
+        integralsmontecarlo[idx, j] = np.sum(np.cos(omega[i, 0]) for i in range(N))
+    integralsmontecarlo[idx, :] *= np.pi * 2 * 1/N
+    #compute error as mean error of K integral values of N sample points
+    errorsmontecarlo[idx] = np.sum(integralsmontecarlo[idx, :] - np.pi) / K
     #compute variance for the K integrals
-    variance = np.var(integrals[idx,:])
-    varis[idx] = variance
+    variance = np.var(integralsmontecarlo[idx,:])
+    varismontecarlo[idx] = variance
     print("var = ", variance)
 
 #plot variance
-plt.plot(varis)
+plt.title('Variance')
+plt.plot(varismontecarlo)
 plt.show()
 #plot error
-plt.plot(errors)
+plt.title('Errors')
+plt.plot(errorsmontecarlo)
 plt.show()
 # -> we see that for higher N, the variance gets lower -> closer to real integral value for higher N
 #print( 'integral = ', integral)
 
 ###############################################################################
 ###############################################################################
-# integration other distribution
+# integration other distribution/importance sampling
 
-print("other distributed point")
+print("importance sampling")
 
-print("To Do: change integral computation to 1/N * Volume (2*pi) * sum(cos(thetai)/p(xi)) on N sample points")
+#print("To Do: change integral computation to 1/N * Volume (2*pi) * sum(cos(thetai)/p(xi)) on N sample points")
 #Where p(x) = c*g(x) = 1/integral(g(x)) * g(x)  -> need to choose a function g(x) which is similar to f(x)
 #if g(x) == f(x) one would need only one sample point, but then i would already now the integral
 
 N = 1000
 #omegas = np.zeros( [N, 2])
-omegas = np.array([getpxdistributedPointS2() for i in range(N)])
+omegas = np.array([getCosineDistributedPointH2() for i in range(N)])
 #integral = 0   
        
 #for i in range(N):
@@ -156,21 +161,22 @@ for idx in range(Ns.size):
     variance = 0
     #compute K time the integral with N random points via monte carlo
     for j in range(K):
-        omega = np.array([getpxdistributedPointS2() for i in range(N)])
-        integrals[idx, j] = np.sum(np.cos(omega[i, 0]) for i in range(N))
-    integrals[idx, :] *= np.pi * 2 * 1/N
+        omega = np.array([getCosineDistributedPointH2() for i in range(N)])
+        integrals[idx, j] = np.sum(np.cos(omega[i, 0])/((1/np.pi)*np.cos(omega[i,0])) for i in range(N))
+    integrals[idx, :] *= 1/N #* np.pi * 2
     #get mean error for all integrals in K
     errors[idx] = np.sum(integrals[idx, :] - np.pi)/K
-    print(np.sum(integrals[idx, :] - np.pi))
     #compute variance for the K integrals
     variance = np.var(integrals[idx,:])
     varis[idx] = variance
     print("var = ", variance)
 
 #plot variance
+plt.title('Variance')
 plt.plot(varis)
 plt.show()
 #plot error
+plt.title('Errors')
 plt.plot(errors)
 plt.show()
 
