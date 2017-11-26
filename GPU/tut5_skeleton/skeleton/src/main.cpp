@@ -89,16 +89,57 @@ template<typename T> void merge(T* dataleft, T* lastleft, T* dataright, T* lastr
 
 template<typename T>
 void
-merge2(T* data1, T* last1, T* data2, T* last2, T* scratch) {
-
+merge2(T* dataleft, T* lastleft, T* dataright, T* lastright, T* scratch) {
+#if 0
 	// merge
-	while (data1 != last1 && data2 != last2) {
-		T*& which = (*data1 < *data2) ? data1 : data2;
+	// increment dataleft and dataright pointer, as well as scratch pointer
+	while (dataleft != lastleft && dataright != lastright) {
+		T*& which = (*dataleft < *dataright) ? dataleft : dataright;
 		*scratch++ = std::move(*which++);
 	}
+	
 	// copy remainder (obviously, only one will have an effect)
-	std::move(data1, last1, scratch);
-	std::move(data2, last2, scratch);
+	// copys the remaining elements to the end of scratch 
+	//(all pointers are incremented in the above loop, so dataleft==lastleft 
+	//or dataright==lastright, scratch points to the last element added in the scratch array
+	std::move(dataleft, lastleft, scratch);
+	std::move(dataright, lastright, scratch);
+#else
+	int l = 0;
+	int r = 0;
+
+	//always take the smaller element from the left or right array
+	while (dataleft + l != lastleft && dataright + r != lastright)
+	{
+		if (dataleft[l] <= dataright[r])
+		{
+			//std::move to avoid copying whatever T is (might be bigger than an int)
+			scratch[l + r] = std::move(dataleft[l]);
+			l++;
+		}
+		else
+		{
+			scratch[l + r] = std::move(dataright[r]);
+			r++;
+		}
+	}
+
+	//if elements from one array are left, add them at the end
+	while (dataleft + l != lastleft)
+	{
+		scratch[l + r] = std::move(dataleft[l]);
+		l++;
+	}
+
+	while (dataright + r != lastright)
+	{
+		scratch[l + r] = std::move(dataright[r]);
+		r++;
+	}
+	// copy remainder (obviously, only one will have an effect)
+	//std::move(dataleft, lastleft, scratch);
+	//std::move(dataright, lastright, scratch);
+#endif
 }
 
 template<typename T> void mergeParallel(T* left, T* leftlast, T* right, T* rightlast, T* scratch, int remaining_threads)
