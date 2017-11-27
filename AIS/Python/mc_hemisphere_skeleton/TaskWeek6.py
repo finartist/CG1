@@ -55,12 +55,30 @@ def getCosineDistributedPointH2() :
     omega[1] *= 2*np.pi
     return omega
 
-def getStratifiedPointsH2(n, num_stratas, phi = False, theta = True):
+def getStratifiedPointsH2(n, num_stratas, phi = False, theta = True, withLowDis = False):
 
     num_stratas = np.int32(num_stratas)
     samplesPerStrata = np.int32(n/num_stratas)
         
     omega = np.zeros([n, 2])
+    
+    if (withLowDis):
+        num_stratasPhi = 8
+        num_stratasTheta = np.int32(num_stratas/num_stratasPhi)
+        
+        index = 0
+        sobolpoints = sobol_seq.i4_sobol_generate(2, samplesPerStrata)
+        
+        #slice sphere in theta and phi
+        for i in range(num_stratasPhi):
+            for j in range(num_stratasTheta):
+                rand = sobolpoints.copy()
+                rand[:, 0] = np.arccos(rand[:, 0]/num_stratasTheta + j/num_stratasTheta)
+                rand[:, 1] = (rand[:,1]/num_stratasPhi + i/num_stratasPhi) * 2 * np.pi
+                omega[index*samplesPerStrata:(index+1)*samplesPerStrata] = rand
+                index += 1
+                         
+        return omega
     
     if (phi and theta):
         num_stratasPhi = 8
@@ -233,6 +251,29 @@ def lowDiscrepancyCosineSequence(Ns, K):
         print("var = ", variance)
         
     return [integrals, varis, errors]
+
+def lowDiscrepancyStratifiedSampling(Ns, K):
+    #want to compute integral for different numbers N of sample points
+    integrals = np.zeros([Ns.size, K])
+    errors = np.zeros(Ns.size)
+    varis = np.zeros([Ns.size])
+    for idx in range(Ns.size):
+        N = Ns[idx]
+        #variance definition = mean(abs(x - x.mean())**2)
+        variance = 0
+        #compute K time the integral with N random, but better distributed points via monte carlo
+        for j in range(K):
+            omega = np.array(getStratifiedPointsH2(N, 16, True, True, True))
+            integrals[idx, j] = np.sum(lightprobe.value(probe, omega[i,:])*np.max([0.0, np.cos(omega[i, 0])]) for i in range(N))
+        integrals[idx, :] *= 2 * np.pi * 1/N
+        #get mean error for all integrals in K
+        errors[idx] = np.sum(integrals[idx, :] - 492.3)/K
+        #compute variance for the K integrals
+        variance = np.var(integrals[idx,:])
+        varis[idx] = variance
+        print("var = ", variance)
+    return [integrals, varis, errors]
+
 ###############################################################################
 # parameter initialisation
 
@@ -240,7 +281,7 @@ Exponents = np.linspace(6,15,10);
 Ns = np.array(2**Exponents, dtype = np.int32)
 K = 10
 probe = lightprobe.load("data/uffizi.png");
-                      
+                   
 ###############################################################################
 # calculate integral with different distributions
 
@@ -264,6 +305,9 @@ print("low discrepancy sequences")
 
 print("low discrepancy + cosine weighted")
 [lowcosintegrals, lowcosvariance, lowcoserrors] = lowDiscrepancyCosineSequence(Ns, K)
+
+print("low discrepancy + stratified")
+[lowstratintegrals, lowstratvariance, lowstraterrors] = lowDiscrepancyStratifiedSampling(Ns, K)
 ###############################################################################
 # plot graphs
 
@@ -309,12 +353,13 @@ axes = plt.gca()
 axes.set_ylim([-15, 15])
 plt.plot(Exponents, lowdiserrors, label="Low Discrepancy")
 plt.plot(Exponents, lowcoserrors, label="Low Discrepancy + Cosine")
+plt.plot(Exponents, lowstraterrors, label="Low Discrepancy + Stratified")
 plt.legend()
 plt.title("Errors, Low Discrepancy")
 plt.show()
 
 ###############################################################################
-omegas = np.array(getStratifiedPointsH2(1024, 1024, True, True))
+omegas = np.array(getStratifiedPointsH2(1024, 16, True, True, True))
 
 # plot points on sphere
 
