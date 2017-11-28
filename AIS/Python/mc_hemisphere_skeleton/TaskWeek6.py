@@ -36,6 +36,8 @@ def s2tor3array( omega) :
 def ell( omega) :
     return np.max( [0.0, np.cos( omega[0])])
 
+
+##################generate Points
 def getUniformPointH2() :
 
     # generate random point in [0,1]^2
@@ -142,6 +144,8 @@ def getSobolCosinePointsH2(n):
     
     return sobolpoints
 
+
+################Integration
 def uniformSamplingMonteCarlo(Ns,K):
     #want to compute integral for different numbers N of sample points
     integrals = np.zeros([Ns.size, K])
@@ -359,7 +363,7 @@ plt.title("Errors, Low Discrepancy")
 plt.show()
 
 ###############################################################################
-omegas = np.array(getStratifiedPointsH2(1024, 16, True, True, True))
+omegas = np.array(getStratifiedPointsH2(1024, 8, True, True, True))
 
 # plot points on sphere
 
