@@ -35,11 +35,13 @@ def getCosineDistributedPointH2() :
     return omega
 
 def Phong(wi, wo, normal, alpha = 30):
-    lightin = s2to3(wi)
-    lightout = s2to3(wo)
+    lightin = s2tor3(wi)
+    lightout = s2tor3(wo)
+    normalvec = s2tor3(normal)
     #lightin, lightout, normal are all normalized direction vectors
-    lightreflectance = lightin - 2*np.dot(lightin, normal)*normal
-    return np.pow(np.dot(lightout, lightreflectance), alpha)
+    lightreflectance = lightin - 2*np.dot(lightin, normalvec)*normalvec
+    phong = np.power(np.dot(lightout, lightreflectance), alpha)
+    return  phong * (alpha+1)/(2*np.pi)
 
 def cosineImportanceSampling(Ns, K, roh, lightout, normal, alpha):
     #want to compute integral for different numbers N of sample points
@@ -53,7 +55,7 @@ def cosineImportanceSampling(Ns, K, roh, lightout, normal, alpha):
         #compute K time the integral with N random cosine distributed points via monte carlo
         for j in range(K):
             omega = np.array([getCosineDistributedPointH2() for i in range(N)])
-            integrals[idx, j] = np.sum(lightprobe.value(probe, omega[i,:])*np.max([0.0, np.cos(omega[i, 0])])/(np.max([0.0, np.cos(omega[i, 0])])/np.pi) for i in range(N))
+            integrals[idx, j] = np.sum(roh(omega[i, :], lightout, normal, alpha) * lightprobe.value(probe, omega[i,:])*np.max([0.0, np.cos(omega[i, 0])])/(np.max([0.0, np.cos(omega[i, 0])])/np.pi) for i in range(N))
         integrals[idx, :] *= 1/N
         #get mean error for all integrals in K
         errors[idx] = np.sum(integrals[idx, :] - 492.3)/K
@@ -63,7 +65,7 @@ def cosineImportanceSampling(Ns, K, roh, lightout, normal, alpha):
         print("var = ", variance)
     return [integrals, varis, errors]
 
-
+print(cosineImportanceSampling(np.array([2**15]), 1, Phong, np.array([0, 0]), np.array([0, 0]), 32)[0])
 
 
 
