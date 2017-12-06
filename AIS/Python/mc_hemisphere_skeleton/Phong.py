@@ -35,12 +35,13 @@ def getCosineDistributedPointH2() :
     return omega
 
 def Phong(wi, wo, normal, alpha = 30):
-    lightin = s2tor3(wi)
+    #lightin = -s2tor3(wi)
     lightout = s2tor3(wo)
-    normalvec = s2tor3(normal)
+    #normalvec = s2tor3(normal)
     #lightin, lightout, normal are all normalized direction vectors
-    lightreflectance = lightin - 2*np.dot(lightin, normalvec)*normalvec
-    phong = np.power(np.dot(lightout, lightreflectance), alpha)
+    #lightreflectance = lightin - 2*np.dot(lightin, normalvec)*normalvec
+    lightreflectance = s2tor3(wi + [0.0, np.pi]) # just rotate ingoing 180 degree
+    phong = np.power(np.dot(lightreflectance, lightout), alpha)
     return  phong * (alpha+1)/(2*np.pi)
 
 def cosineImportanceSampling(Ns, K, roh, lightout, normal, alpha):
@@ -65,7 +66,10 @@ def cosineImportanceSampling(Ns, K, roh, lightout, normal, alpha):
         print("var = ", variance)
     return [integrals, varis, errors]
 
-print(cosineImportanceSampling(np.array([2**15]), 1, Phong, np.array([0, 0]), np.array([0, 0]), 32)[0])
+#try for multiple degree in theta
+for i in range(np.int32(90/15) + 1):
+    integrals = cosineImportanceSampling(np.array([2**15]), 10, Phong, np.array([i/12 * np.pi, 0]), np.array([0, 0]), 31)[0]
+    print("for lightout ",i * 15, " degree in theta: ",np.mean(integrals))
 
 
 
