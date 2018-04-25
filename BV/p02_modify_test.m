@@ -2,7 +2,7 @@ clear all;
 close all;
 
 %read image and convert to double
-image = imread('C:/Users/x/Dropbox/Uni/3.Semester/BV/Praxisaufgabe_02/p02_Bild01.tif');
+image = imread('D:\Lisa\Documents\Uni\Uni_Programming\BV\p02_Bild01.tif');
 image = double(image);
 
 %convert to frequency domain

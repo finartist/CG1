@@ -14,7 +14,7 @@ function img_myfft = p02_myfft2 (img)
   frequMatrix = MMatrix * img * NMatrix;
   
   %shift quadrants, so that low frequencies are centered
-  %ceil rounds
+  %ceil rounds it up
   sz = ceil(size(frequMatrix)/2);
   %cut quadrants and rearrange them
   shifted = frequMatrix([sz(1)+1:end, 1:sz(1)], [sz(2)+1:end, 1:sz(2)]);
