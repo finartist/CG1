@@ -1,3 +1,6 @@
 [submodule "AIS/Python/Irradiance-Caching.git"]
 	path = AIS/Python/Irradiance-Caching.git
 	url = ../../Kedreals/Irradiance-Caching.git
+[submodule "Mesh Processing/mp18"]
+	path = Mesh Processing/mp18
+	url = git@vccourses.cs.ovgu.de:course/mp18.git
