@@ -1,0 +1,3 @@
+[submodule "AIS/Python/Irradiance-Caching.git"]
+	path = AIS/Python/Irradiance-Caching.git
+	url = ../../Kedreals/Irradiance-Caching.git
