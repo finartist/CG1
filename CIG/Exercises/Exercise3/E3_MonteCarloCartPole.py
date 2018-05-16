@@ -25,6 +25,7 @@ def getCartVelocityBin(val):
         return 3
 
 def getPoleAngleBin(val):
+    val = np.rad2deg(val)
     if (val < -8):
         return 0
     elif (val >= -8 and val < -4):
@@ -45,20 +46,23 @@ def getPoleAngleDiffBin(val):
         return 1
 
 def updateValueMatrix(matrix, episodeObservations, returns, numEpisode, alpha):
-    numVisitsMatrix = np.zeros((4, 4, 6, 2))
+    #numVisitsMatrix = np.zeros((4, 4, 6, 2))
     i = 0
     if(numEpisode == 0):
         alpha = 1
 
     for state in episodeObservations:
         index = (getCartPosBin(state[0]), getCartVelocityBin(state[1]), getPoleAngleBin(state[2]), getPoleAngleDiffBin(state[3]))
-        numVisitsMatrix[index[0], index[1], index[2], index[3]] += 1
-        matrix[index[0], index[1], index[2], index[3]] += alpha/numVisitsMatrix[index[0], index[1], index[2], index[3]] *\
-                                                          (returns[i] - matrix[index[0], index[1], index[2], index[3]])
+        #numVisitsMatrix[index[0], index[1], index[2], index[3]] += 1
+        #matrix[index[0], index[1], index[2], index[3]] += alpha/numVisitsMatrix[index[0], index[1], index[2], index[3]] *\
+        #                                                  (returns[i] - matrix[index[0], index[1], index[2], index[3]])
+        matrix[index[0], index[1], index[2], index[3]] += alpha * (returns[i] - matrix[index[0], index[1], index[2], index[3]])
+        
         i += 1
     return
 
 def printNonZeroIndices(matrix):
+    print("pos, cart velo, pole angl, pole angl velo: value")
     cartPos, cartVel, poleAng, poleAngDiff = np.nonzero(matrix)
     for i in range(len(cartPos)):
         print("%i, %i, %i, %i: %f" % (cartPos[i], cartVel[i], poleAng[i], poleAngDiff[i],
@@ -86,6 +90,8 @@ for i_episode in range(20):
             episodeReturns[0] += episodeReturns[1]
 
         if done:
+            # The episode ends, when the pole is more than 15 degrees from vertical, 
+            # or the cart moves more than 2.4 units from the center.
             print("Episode finished after {} timesteps".format(t+1))
             break
 
