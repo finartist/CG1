@@ -4,6 +4,3 @@
 [submodule "Mesh_Processing/mp18"]
 	path = Mesh_Processing/mp18
 	url = git@vccourses.cs.ovgu.de:course/mp18.git
-[submodule "CIG/Hearthstone/SabberStone"]
-	path = CIG/Hearthstone/SabberStone
-	url = https://github.com/ADockhorn/SabberStone.git
